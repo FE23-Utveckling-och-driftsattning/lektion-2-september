@@ -1,0 +1,58 @@
+service: serverless-example
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  deploymentMethod: direct
+  region: eu-north-1
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - dynamodb:Query
+            - dynamodb:Scan
+            - dynamodb:GetItem
+            - dynamodb:PutItem
+          Resource: arn:aws:dynamodb:${aws:region}:*:table/my-todos
+
+plugins:
+  - serverless-webpack
+
+package:
+  individually: true
+
+functions:
+  GetTodo:
+    handler: functions/GetTodo/index.handler
+    events:
+      - httpApi:
+          path: /todos
+          method: get
+  PostTodo:
+    handler: functions/PostTodo/index.handler
+    events:
+      - httpApi:
+          path: /todos
+          method: post
+  UpdateTodo:
+    handler: functions/UpdateTodo/index.handler
+    events:
+      - httpApi:
+          path: /todos/{id}
+          method: put
+
+resources:
+  Resources:
+    TodoTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: my-todos
+        AttributeDefinitions:
+          - AttributeName: 'todoId'
+            AttributeType: 'S'
+        KeySchema:
+          - AttributeName: 'todoId'
+            KeyType: HASH
+        BillingMode: PAY_PER_REQUEST
